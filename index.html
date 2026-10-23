@@ -131,6 +131,34 @@
   #updBar.on{display:flex}
   #updBar span{flex:1}
   #updBar button{background:#04172b;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-weight:800}
+  /* Beleg-Scan */
+  .scan{display:flex;gap:8px;margin:0 0 12px}
+  .scan button{font:inherit;border:0;border-radius:16px;color:var(--accd);background:var(--acc);display:flex;align-items:center;justify-content:center;gap:10px;text-align:left}
+  #scanBtn{flex:1.55;min-height:86px;padding:10px 14px;font-size:19px;font-weight:800;line-height:1.2}
+  #scanBtn .ic{font-size:34px;line-height:1}
+  #scanBtn small{display:block;font-size:13px;font-weight:600;opacity:.8;margin-top:2px}
+  #scanGal{flex:1;min-height:86px;padding:8px 10px;font-size:16px;font-weight:800;background:var(--card2);color:var(--txt);border:2px solid var(--acc);line-height:1.2;flex-direction:column;gap:4px;text-align:center}
+  #scanGal .ic{font-size:26px;line-height:1}
+  .scan button:active{filter:brightness(.88)}
+  .hint{border-radius:14px;padding:11px 13px;margin:0 0 12px;font-size:15px;line-height:1.35;background:#16263a;border:1px solid #27466b;color:#cfe5ff}
+  .hint b{color:#fff}
+  .hint.warn{background:#2c2710;border-color:#6d5f12;color:#ffeb99}
+  .hint .hr{display:flex;gap:8px;margin-top:8px}
+  .hint button{font:inherit;font-size:14.5px;font-weight:700;border-radius:10px;padding:8px 11px;border:1px solid currentColor;background:none;color:inherit}
+  .field.uns input.big,.field.uns .txt{border-color:#e0b800;background:#2a2610}
+  .field.uns>label::after,.field.uns>.lbl::after{content:" · bitte prüfen";color:#ffd60a;text-transform:none;letter-spacing:0;font-weight:700}
+  .field.uns .chips{outline:2px solid #e0b800;outline-offset:3px;border-radius:12px}
+  .when.uns>button{color:#ffd60a}
+  .when.uns>button u{color:#ffd60a}
+  .when.uns>button::after{content:" · bitte prüfen";color:#ffd60a;font-weight:700}
+  #scanOvl{position:fixed;inset:0;z-index:25;background:rgba(10,12,15,.96);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px;text-align:center}
+  #scanOvl.on{display:flex}
+  #scanOvl img{max-width:62%;max-height:36vh;border-radius:12px;border:2px solid var(--line);object-fit:contain;background:#fff}
+  #scanOvl .st{font-weight:800;font-size:19px}
+  #scanOvl .sb{color:var(--mut);font-size:14px;max-width:320px}
+  #scanOvl .pb{width:100%;max-width:340px;height:12px;background:var(--card2);border-radius:6px;overflow:hidden}
+  #scanOvl .pb i{display:block;height:100%;width:0;background:var(--acc);border-radius:6px;transition:width .25s}
+  #scanOvl button{font:inherit;font-weight:700;font-size:16px;padding:12px 22px;border-radius:12px;border:1px solid var(--line);background:var(--card2);color:var(--txt)}
   #installBtn{display:none;background:var(--acc);color:var(--accd);border:0;border-radius:10px;padding:7px 12px;font-weight:800;font-size:14px}
 </style>
 </head>
@@ -141,6 +169,11 @@
   <!-- ===== Eintragen ===== -->
   <section id="v-add" class="view on">
     <div id="editBar" class="editbar" hidden><span>✎ Eintrag bearbeiten</span><button type="button" id="editCancel">Abbrechen</button></div>
+    <div class="scan" id="scanBox">
+      <button type="button" id="scanBtn"><span class="ic">📷</span><span>Beleg fotografieren<small>Rest macht die App</small></span></button>
+      <button type="button" id="scanGal"><span class="ic">🖼</span><span>Screenshot wählen</span></button>
+    </div>
+    <div id="scanHint" class="hint" hidden></div>
     <div class="when">
       <button type="button" id="whenBtn">🕒 <b id="whenTxt"></b><u id="whenHint">ändern</u></button>
       <div class="whenEdit" id="whenEdit" hidden><input id="when" type="datetime-local" aria-label="Datum und Uhrzeit"><button type="button" id="whenNow">Jetzt</button></div>
@@ -198,6 +231,12 @@
       <div class="addRow"><input id="newCat" type="text" placeholder="Neue Kategorie" enterkeyhint="done" autocapitalize="words"><button type="button" id="addCat">＋ Hinzufügen</button></div>
       <p class="muted" style="margin-bottom:0">Symbol antippen zum Ändern. Beim Löschen einer Kategorie wandern ihre Einträge nach „Sonstiges“.</p>
     </div>
+    <h2>Beleg-Scan</h2>
+    <div class="card">
+      <p class="muted" style="margin-top:0">Fotos und Screenshots werden direkt auf dem Handy gelesen (Texterkennung ohne Internet, nichts wird hochgeladen).</p>
+      <p id="ocrStat" style="margin:0 0 8px;font-weight:600">…</p>
+      <button class="btn sec" id="ocrLoad" type="button" hidden style="margin-bottom:0">⬇ Texterkennung jetzt laden (einmalig ca. 8 MB)</button>
+    </div>
     <h2>Sicherung &amp; Export</h2>
     <div class="card">
       <p class="muted" style="margin-top:0">Die Daten liegen nur auf diesem Handy. Mach ab und zu eine Sicherung (z. B. in Google Drive), damit beim Handywechsel nichts verloren geht.</p>
@@ -209,7 +248,7 @@
       <p class="muted" id="stats" style="margin-bottom:0"></p>
     </div>
     <button class="btn danger" id="wipe" type="button">Alle Ausgaben löschen</button>
-    <p class="muted" style="text-align:center">Ausgaben · v1 · funktioniert offline</p>
+    <p class="muted" style="text-align:center">Ausgaben · v2 · funktioniert offline</p>
   </section>
 </main>
 
@@ -223,6 +262,15 @@
 
 <input type="file" id="photoCam" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="photoGal" accept="image/*" style="display:none">
+<input type="file" id="scanCam" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="scanFile" accept="image/*" style="display:none">
+<div id="scanOvl">
+  <img id="scanImg" alt="Beleg">
+  <div class="st" id="scanLbl">Beleg wird gelesen …</div>
+  <div class="pb"><i id="scanBar"></i></div>
+  <div class="sb" id="scanSub">Alles passiert auf deinem Handy – nichts wird hochgeladen.</div>
+  <button type="button" id="scanSkip">Abbrechen</button>
+</div>
 <div id="lightbox">
   <div class="lbScroll" id="lbScroll"><img id="lbImg" alt="Beleg"></div>
   <div class="cap" id="lbCap"></div>
@@ -232,10 +280,12 @@
 <div id="updBar"><span>Neue Version verfügbar</span><button type="button" id="updBtn">Neu laden</button></div>
 <div class="toast" id="toast"><span id="toastTxt"></span><button id="toastBtn" type="button">Rückgängig</button></div>
 
+<script src="parser.js"></script>
+<script src="ocr.js"></script>
 <script>
 (function(){
 'use strict';
-var VERSION = 1;
+var VERSION = 2;
 var $ = function(id){ return document.getElementById(id); };
 var DEFAULT_CATS = [
   ['lebensmittel','Lebensmittel','🛒'], ['drogerie','Drogerie','🧴'], ['auto','Tanken/Auto','⛽'],
@@ -389,7 +439,7 @@ function shopInfo(name){ return shops()[String(name || '').trim().toLowerCase()]
 
 // ---------- Eintragen ----------
 var amtIn = $('amt'), shopIn = $('shop'), noteIn = $('note');
-var form = { editId: null, returnTo: 'add', whenManual: false, when: new Date(), cat: null, catManual: false, photo: null, photoChanged: false };
+var form = { editId: null, returnTo: 'add', whenManual: false, when: new Date(), cat: null, catManual: false, photo: null, photoChanged: false, auto: {}, scanSrc: null, lastText: null };
 var saving = false;
 
 function updateWhen(){
@@ -487,7 +537,7 @@ function renderPhotoRow(){
   var r = $('photoRow');
   if (form.photo){
     r.innerHTML = '<img class="rthumb" id="fThumb" alt="Beleg" src="' + form.photo.url + '">'
-      + '<button type="button" class="pbtn" data-ph="cam">📷 Neu</button><button type="button" class="pbtn" data-ph="gal">🖼 Galerie</button><button type="button" class="pbtn sm" data-ph="del" aria-label="Beleg entfernen">✕</button>';
+      + '<button type="button" class="pbtn" data-ph="cam">📷 Neu</button><button type="button" class="pbtn" data-ph="gal">🖼 Galerie</button>' + (form.editId ? '' : '<button type="button" class="pbtn sm" data-ph="scan" aria-label="Beleg auslesen">🔍</button>') + '<button type="button" class="pbtn sm" data-ph="del" aria-label="Beleg entfernen">✕</button>';
   } else {
     r.innerHTML = '<button type="button" class="pbtn" data-ph="cam">📷 Foto</button><button type="button" class="pbtn" data-ph="gal">🖼 Galerie / Screenshot</button>';
   }
@@ -497,6 +547,7 @@ $('photoRow').addEventListener('click', function(ev){
   var b = ev.target.closest('[data-ph]'); if (!b) return;
   var k = b.getAttribute('data-ph');
   if (k === 'del'){ setFormPhoto(null, true); toast('Beleg entfernt'); }
+  else if (k === 'scan'){ if (form.photo){ form.auto = form.auto || {}; runScan(form.scanSrc || form.photo.blob, false); } }
   else pickPhoto(k === 'gal');
 });
 function pickPhoto(gallery){ var el = $(gallery ? 'photoGal' : 'photoCam'); el.value = ''; el.click(); }
@@ -526,6 +577,152 @@ function onPhotoFile(){
 $('photoCam').addEventListener('change', onPhotoFile);
 $('photoGal').addEventListener('change', onPhotoFile);
 
+// ----- Beleg-Scan (Foto/Screenshot -> Texterkennung -> Formular vorausfüllen) -----
+var scanOpen = false, scanRun = 0;
+function unsure(el, on){ var f = el && (el.closest ? el.closest('.field, .when') : null); if (f) f.classList[on ? 'add' : 'remove']('uns'); }
+function clearUnsure(){ Array.prototype.forEach.call(document.querySelectorAll('.uns'), function(n){ n.classList.remove('uns'); }); }
+function showHint(html, warn, actions){
+  var h = $('scanHint'); h.className = 'hint' + (warn ? ' warn' : ''); h.hidden = !html;
+  h.innerHTML = html + (actions ? '<div class="hr">' + actions + '</div>' : '');
+}
+function shopMemory(){ var m = shops(), o = {}; Object.keys(m).forEach(function(k){ o[k] = m[k].cat; }); return o; }
+function setScanProgress(p){
+  $('scanBar').style.width = p.pct + '%'; $('scanLbl').textContent = p.label;
+  $('scanSub').textContent = p.stage === 'load' ? 'Das passiert nur beim allerersten Mal (ca. 8 MB, danach auch offline).' : 'Alles passiert auf deinem Handy – nichts wird hochgeladen.';
+}
+function openScanOvl(url){
+  $('scanImg').src = url; $('scanBar').style.width = '2%'; $('scanLbl').textContent = 'Bild wird vorbereitet …';
+  $('scanSub').textContent = 'Alles passiert auf deinem Handy – nichts wird hochgeladen.';
+  $('scanSkip').textContent = 'Abbrechen';
+  $('scanOvl').className = 'on'; scanOpen = true;
+  pushOvl(function(){ scanRun++; if (root_ocr()) root_ocr().kill(); closeScanRaw(); showHint('Auslesen abgebrochen – der Beleg ist angehängt. Betrag und Rest bitte selbst eintragen.', true, '<button type="button" data-sc="again">🔍 Nochmal auslesen</button>'); });
+}
+function root_ocr(){ return window.BelegOCR; }
+function closeScanRaw(){ scanOpen = false; $('scanOvl').className = ''; $('scanImg').removeAttribute('src'); }
+function closeScan(){ if (!scanOpen) return; closeScanRaw(); popOvl(); }
+$('scanSkip').addEventListener('click', function(){ if (!scanOpen) return; scanRun++; if (root_ocr()) root_ocr().kill(); closeScan(); showHint('Auslesen abgebrochen – der Beleg ist angehängt. Betrag und Rest bitte selbst eintragen.', true, '<button type="button" data-sc="again">🔍 Nochmal auslesen</button>'); });
+
+function canOverwrite(key, el){ return !el.value.trim() || form.auto[key]; }
+function applyScan(r){
+  var got = [], low = [], res = r;
+  clearUnsure();
+  // Betrag
+  if (res.amount && res.amount > 0 && canOverwrite('amt', amtIn)){
+    amtIn.value = fmtPlain(res.amount); form.auto.amt = true; got.push('Betrag');
+    if (res.amountConf < 0.75){ unsure(amtIn, true); low.push('Betrag'); }
+  } else if (!(res.amount > 0)){ unsure(amtIn, true); low.push('Betrag'); }
+  // Geschäft (bekannte Schreibweise aus früheren Einträgen bevorzugen)
+  if (res.shop && canOverwrite('shop', shopIn)){
+    var si = shopInfo(res.shop);
+    shopIn.value = si ? si.name : res.shop; form.auto.shop = true; got.push('Geschäft');
+    if (res.shopConf < 0.75 && !si){ unsure(shopIn, true); low.push('Geschäft'); }
+  } else if (!res.shop){ unsure(shopIn, true); low.push('Geschäft'); }
+  // Datum/Uhrzeit
+  if (res.date && !form.editId){
+    var n = new Date(), dd = res.date, h = dd.h, mi = dd.mi;
+    if (h == null){ var isToday = dd.y === n.getFullYear() && dd.m === n.getMonth() + 1 && dd.d === n.getDate(); h = isToday ? n.getHours() : 12; mi = isToday ? n.getMinutes() : 0; }
+    form.when = new Date(dd.y, dd.m - 1, dd.d, h, mi); form.whenManual = true; form.auto.when = true; updateWhen(); got.push('Datum');
+    if (res.dateConf < 0.75){ unsure($('whenBtn'), true); low.push('Datum'); }
+  } else if (!form.editId && !form.auto.when && !form.whenManual){ unsure($('whenBtn'), true); low.push('Datum (heute eingetragen)'); }
+  // Kategorie
+  var cid = res.catId && catById(res.catId) ? res.catId : null;
+  if (cid && (!form.cat || form.auto.cat)){
+    form.cat = cid; form.catManual = false; form.auto.cat = true; renderCats(); got.push('Kategorie');
+    if (res.catConf < 0.75){ unsure($('cats'), true); low.push('Kategorie'); }
+  } else if (!form.cat){ unsure($('cats'), true); low.push('Kategorie'); }
+  // Notiz
+  if (res.note && canOverwrite('note', noteIn)){ noteIn.value = res.note; form.auto.note = true; growNote(); got.push('Notiz'); }
+  // Hinweistext
+  var dup = res.amount ? entries.filter(function(e){ var d = res.date ? new Date(res.date.y, res.date.m - 1, res.date.d) : new Date(); return e.c === res.amount && dayKey(new Date(e.t)) === dayKey(d) && (!res.shop || (e.shop || '').toLowerCase() === res.shop.toLowerCase()); })[0] : null;
+  var html;
+  if (!got.length || !(res.amount > 0)){
+    html = '<b>Nicht alles konnte gelesen werden.</b> Der Beleg ist angehängt' + (got.length ? ' (gelesen: ' + got.join(', ') + ')' : '') + '. Bitte ' + (res.amount > 0 ? 'prüfen' : 'Betrag eintippen') + ' und speichern. Tipp: Beleg glatt hinlegen, gutes Licht, nah ran.';
+    return showHint(html + (dup ? '<br>⚠ Ähnlicher Eintrag existiert schon.' : ''), true, '<button type="button" data-sc="again">🔍 Nochmal auslesen</button>');
+  }
+  html = '✨ <b>Aus dem Beleg gelesen.</b> ' + (low.length ? '<span>Gelb markiert = unsicher: ' + low.join(', ') + '.</span> ' : 'Alles sicher erkannt. ') + 'Dann nur noch <b>Speichern</b>.' + (dup ? '<br>⚠ Ähnlicher Eintrag (gleicher Betrag, Tag, Geschäft) existiert schon.' : '');
+  showHint(html, low.length > 0 || !!dup, '<button type="button" data-sc="again">🔍 Nochmal auslesen</button>');
+}
+function runScan(file, shrinkToo){
+  if (!window.BelegOCR || !window.BelegParser){ toast('Beleg-Scan nicht verfügbar', null, true); return; }
+  var id = ++scanRun;
+  form.scanSrc = file;
+  showHint('', false);
+  var url = URL.createObjectURL(file);
+  openScanOvl(url);
+  var pShrink = shrinkToo ? shrink(file).then(function(b){ setFormPhoto(b, true); }).catch(function(e){ toast('Foto fehlgeschlagen: ' + e.message, null, true); }) : Promise.resolve();
+  window.BelegOCR.run(file, function(p){ if (id === scanRun && scanOpen) setScanProgress(p); }).then(function(o){
+    URL.revokeObjectURL(url);
+    if (id !== scanRun) return;
+    return pShrink.then(function(){
+      var r = window.BelegParser.parse(o.text, { cats: settings.cats, memory: shopMemory(), now: new Date() });
+      form.lastText = o.text;
+      closeScan();
+      if (r.empty) showHint('<b>Auf dem Bild habe ich keinen Text gefunden.</b> Der Beleg ist angehängt. Bitte Betrag selbst eintippen.', true, '<button type="button" data-sc="again">🔍 Nochmal auslesen</button>');
+      else applyScan(r);
+      window.scrollTo(0, 0);
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+      if (!(r.amount > 0)) setTimeout(function(){ amtIn.focus(); }, 50);
+    });
+  }).catch(function(e){
+    URL.revokeObjectURL(url);
+    if (id !== scanRun) return;
+    pShrink.then(function(){
+      closeScan();
+      showHint('<b>Texterkennung nicht möglich</b> (' + esc(e && e.message || 'Fehler') + '). Der Beleg ist angehängt. Falls du offline bist: einmal mit Internet öffnen, dann klappt es auch ohne.', true, '<button type="button" data-sc="again">🔍 Nochmal versuchen</button>');
+      amtIn.focus();
+    });
+  });
+}
+function onScanFile(){
+  var f = this.files && this.files[0]; this.value = ''; if (!f) return;
+  if (form.editId) return;
+  form.auto = {}; form.autoWhen = false;
+  runScan(f, true);
+}
+$('scanCam').addEventListener('change', onScanFile);
+$('scanFile').addEventListener('change', onScanFile);
+$('scanBtn').addEventListener('click', function(){ $('scanCam').value = ''; $('scanCam').click(); });
+$('scanGal').addEventListener('click', function(){ $('scanFile').value = ''; $('scanFile').click(); });
+$('scanHint').addEventListener('click', function(ev){
+  var b = ev.target.closest('[data-sc]'); if (!b) return;
+  var src = form.scanSrc || (form.photo && form.photo.blob);
+  if (src) runScan(src, false); else pickScanFallback();
+});
+function pickScanFallback(){ $('scanFile').value = ''; $('scanFile').click(); }
+// Foto manuell angehängt -> auslesen anbieten
+// Eingriffe des Nutzers entfernen die gelbe Markierung des Feldes
+function userTouched(key, el){ form.auto[key] = false; var f = el.closest('.field, .when'); if (f) f.classList.remove('uns'); }
+amtIn.addEventListener('input', function(){ userTouched('amt', amtIn); });
+shopIn.addEventListener('input', function(){ userTouched('shop', shopIn); });
+noteIn.addEventListener('input', function(){ userTouched('note', noteIn); });
+$('cats').addEventListener('click', function(){ form.auto.cat = false; $('cats').closest('.field').classList.remove('uns'); });
+$('when').addEventListener('change', function(){ form.auto.when = false; $('when').closest('.when').classList.remove('uns'); });
+$('whenNow').addEventListener('click', function(){ form.auto.when = false; $('whenBtn').closest('.when').classList.remove('uns'); });
+
+// OCR-Status / Vorab-Laden
+var OCR_CACHE = 'ausgaben-ocr-v1', OCR_FILES = ['tesseract.min.js', 'worker.min.js', 'tesseract-core-simd-lstm.wasm.js', 'lang/deu.traineddata.gz', 'lang/eng.traineddata.gz'];
+function ocrCached(){
+  if (!window.caches) return Promise.resolve(false);
+  return caches.open(OCR_CACHE).then(function(c){ return Promise.all(OCR_FILES.map(function(f){ return c.match(new URL('ocr/' + f, document.baseURI).href); })); })
+    .then(function(r){ return r.every(function(x){ return !!x; }); }).catch(function(){ return false; });
+}
+function renderOcrStat(){
+  ocrCached().then(function(ok){
+    $('ocrStat').textContent = ok ? '✓ Texterkennung offline bereit' : (navigator.onLine === false ? '⚠ Texterkennung noch nicht geladen – bitte einmal mit Internet öffnen' : 'Texterkennung wird beim ersten Scan geladen (einmalig ca. 8 MB)');
+    $('ocrLoad').hidden = ok || navigator.onLine === false;
+  });
+}
+$('ocrLoad').addEventListener('click', function(){
+  $('ocrStat').textContent = '⏳ Texterkennung wird geladen …'; $('ocrLoad').hidden = true;
+  if (window.BelegOCR) window.BelegOCR.prefetch();
+  var n = 0, t = setInterval(function(){ n++; ocrCached().then(function(ok){ if (ok || n > 120){ clearInterval(t); renderOcrStat(); } }); }, 1500);
+});
+function maybePrefetch(){
+  var c = navigator.connection;
+  if (navigator.onLine === false || (c && c.saveData)) return;
+  ocrCached().then(function(ok){ if (!ok && window.BelegOCR) window.BelegOCR.prefetch(); });
+}
+
 // ----- Lightbox -----
 var lbOpen = false;
 function openLightbox(url, cap, actions){
@@ -550,6 +747,7 @@ $('lbDel').addEventListener('click', function(){
 // ----- Speichern -----
 function resetForm(){
   form.editId = null; form.whenManual = false; form.cat = null; form.catManual = false; form.photoChanged = false;
+  form.auto = {}; form.scanSrc = null; form.lastText = null; clearUnsure(); showHint('', false); $('scanBox').hidden = false;
   setFormPhoto(null, false);
   amtIn.value = ''; shopIn.value = ''; noteIn.value = ''; growNote();
   $('whenEdit').hidden = true; $('editBar').hidden = true; $('delEntry').hidden = true;
@@ -599,7 +797,7 @@ function openEdit(id){
   $('when').value = toLocalInput(form.when); $('whenEdit').hidden = false;
   amtIn.value = fmtPlain(e.c); shopIn.value = e.shop || ''; noteIn.value = e.note || '';
   form.cat = e.cat; form.catManual = true; renderCats();
-  $('editBar').hidden = false; $('delEntry').hidden = false; $('save').textContent = 'Änderungen speichern';
+  $('editBar').hidden = false; $('delEntry').hidden = false; $('save').textContent = 'Änderungen speichern'; $('scanBox').hidden = true;
   if (e.photo) getPhoto(id).then(function(b){ if (form.editId === id && b instanceof Blob){ setFormPhoto(b, false); } }).catch(function(){});
   show('add', true); window.scrollTo(0, 0); setTimeout(growNote, 0);
   pushOvl(function(){ var r = form.returnTo; resetForm(); show(r); });
@@ -950,7 +1148,7 @@ function show(v, keepEdit){
   $('v-more').className = 'view' + (v === 'more' ? ' on' : '');
   $('l-cat').hidden = v !== 'cat'; $('l-size').hidden = v !== 'size'; $('l-hist').hidden = v !== 'hist';
   if (lists) renderLists();
-  if (v === 'more'){ renderCatEdit(); renderStats(); }
+  if (v === 'more'){ renderCatEdit(); renderStats(); renderOcrStat(); }
   if (v === 'add'){ renderToday(); if (!form.whenManual) updateWhen(); }
 }
 Array.prototype.forEach.call(document.querySelectorAll('nav button'), function(b){
@@ -973,7 +1171,7 @@ var deferred = null;
 window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); deferred = e; $('installBtn').style.display = 'inline-block'; });
 $('installBtn').addEventListener('click', function(){ if (deferred){ deferred.prompt(); deferred = null; $('installBtn').style.display = 'none'; } });
 window.addEventListener('appinstalled', function(){ $('installBtn').style.display = 'none'; });
-function formBusy(){ return !!(amtIn.value || shopIn.value || noteIn.value || form.photo || form.editId || lbOpen); }
+function formBusy(){ return !!(amtIn.value || shopIn.value || noteIn.value || form.photo || form.editId || lbOpen || scanOpen); }
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   var hadCtrl = !!navigator.serviceWorker.controller, reloading = false;
   navigator.serviceWorker.addEventListener('controllerchange', function(){
@@ -996,7 +1194,8 @@ amtIn.focus();
 ready.then(function(){ renderAll(); if (!form.editId && document.activeElement !== shopIn && document.activeElement !== noteIn) amtIn.focus(); });
 
 // für Tests
-window.__ausgaben = { version: VERSION, ready: function(){ return ready; }, entries: function(){ return entries; }, settings: function(){ return settings; },
+setTimeout(maybePrefetch, 6000);   // Texterkennung im Hintergrund vorladen, sobald die App ruhig ist
+window.__ausgaben = { version: VERSION, runScan: runScan, applyScan: applyScan, ready: function(){ return ready; }, entries: function(){ return entries; }, settings: function(){ return settings; },
   parseAmount: parseAmount, toCSV: toCSV, toJSON: toJSON, importText: importText, save: doSave, getPhoto: getPhoto };
 })();
 </script>
